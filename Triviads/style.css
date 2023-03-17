@@ -48,25 +48,14 @@
     font-size:16px;
     color:#0085e2;
 }
-.inside-contact input, .inside-contact textarea{
+.inside-contact textarea{
     width:100%;
     background-color:#eee;
     border:1px solid rgba(0,0,0,0.48);
     padding:5px 10px;
     margin-bottom:20px;
 }
-.inside-contact input[type=submit]{
-    background-color:#000;
-    color:#fff;
-    transition:0.2s;
-    border:2px solid #000;
-    margin:30px 0;
-}
-.inside-contact input[type=submit]:hover{
-    background-color:#fff;
-    color:#000;
-    transition:0.2s;
-}
+
 @media screen and (max-width:991px){
     .contact-parent{
         display:block;
@@ -104,7 +93,6 @@ body {
     float: left;
     width: 33.3%;
     margin-bottom: 16px;
-    padding: 0 8px;
   }
   
   .card {
