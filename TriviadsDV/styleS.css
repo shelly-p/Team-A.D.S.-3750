@@ -9,7 +9,7 @@ body {
     margin: 0 auto;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
-    background: linear-gradient(to right, #33339a, #ff00cc);
+    background: linear-gradient(to right, #ffff00, #ff00cc);
     justify-content: center;
     align-items: center;
 }
