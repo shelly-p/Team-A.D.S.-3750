@@ -1,7 +1,7 @@
 // Import the necessary modules
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, getFirestore, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, getFirestore, query, orderBy, where, doc, setDoc } from "firebase/firestore";
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -47,16 +47,26 @@ const signOutUser = async () => {
 };
 
 // Create a function that registers a new user
-const registerUser = async (emailRef, passwordRef) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, emailRef, passwordRef);
-    const user = userCredential.user;
-    console.log("Registered user:", user);
-    // Set user as authenticated in session storage
-    window.sessionStorage.setItem("authenticatedUser", JSON.stringify(user));
-  } catch (error) {
-    console.error("Error registering user:", error);
-  }
+const registerUser = async (email, password, username) => {
+  createUserWithEmailAndPassword(auth, email, password)
+  .then((userCredential) => {
+    const { uid } = userCredential.user;
+    const userRef = doc(db, "users", uid);
+    setDoc(userRef, {
+      email,
+      username,
+      authProvider: "custom"
+    })
+      .then(() => {
+        sessionStorage.setItem("username", username);
+      })
+      .catch((error) => {
+        console.error("Error adding user to collection: ", error);
+      });
+  })
+  .catch((error) => {
+    console.error("Error registering user: ", error);
+  });
 };
 
 
@@ -65,4 +75,4 @@ const registerUser = async (emailRef, passwordRef) => {
 
 
 export { auth, authenticateUser, signOutUser, registerUser, onAuthStateChanged,
-   getDocs, questionsCollectionRef, query, orderBy };
+   db, getDocs, questionsCollectionRef, query, orderBy, where };

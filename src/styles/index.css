@@ -1,0 +1,34 @@
+/* buttons */
+.btn {
+    border-radius: 8px;
+    font-size: 16px;
+    padding: 15px 32px;
+}
+
+/* forms */
+.form-container {
+    box-shadow: 1px gray;
+}
+
+label {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+/* navbar */
+
+/* questions */ 
+
+/* answers */
+
+
+
+/* Styles for tablet devices */
+@media (min-width: 768px) {
+  
+}
+
+/* Styles for desktop devices */
+@media (min-width: 1024px) {
+ 
+}
