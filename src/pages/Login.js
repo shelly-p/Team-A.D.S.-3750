@@ -1,92 +1,102 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, authenticateUser, onAuthStateChanged, signInWithGoogle } from "../firebase";
-
+import {
+  auth,
+  authenticateUser,
+  onAuthStateChanged,
+  signInWithGoogle,
+} from "../firebase";
 
 const Login = () => {
-  //const [email, setEmail] = useState("");
-  //const [password, setPassword] = useState("");
   const [authenticatedUser, setAuthenticatedUser] = useState(null);
 
   const emailRef = useRef();
   const passwordRef = useRef();
   const navigate = useNavigate();
 
-
-
-  
-
-
-  //const handleEmailChange = (event) => setEmail(event.target.value);
-  //const handlePasswordChange = (event) => setPassword(event.target.value);
-
   const handleSubmit = (event) => {
     event.preventDefault();
     authenticateUser(emailRef.current.value, passwordRef.current.value);
+    {
+      navigate("/Dashboard");
+    }
   };
 
-  /*useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-      } else {
-        setAuthenticatedUser(null);
-      }
-    });
-    return unsubscribe;
-  }, [auth]);*/
- 
   return (
-    <div>
+    <div className="full-screen d-flex align-items-center justify-content-center alight-content-center text-center flex-column">
       {authenticatedUser ? (
         <>
           <p>User is logged in</p>
-          {navigate("/Dashboard")}
         </>
       ) : (
-        <div className="container-lg">
-          <div className='row justify-content-center '>
+        <div className="login-card-container">
+          <div className="login-card">
+            <div className="login-card-logo">
+              <span className="material-symbols-rounded display-3">
+                psychology
+              </span>
+            </div>
+            <div className="login-card-header">
+              <h1>Sign In</h1>
+              <div>Please sign up to use the platform</div>
+            </div>
 
-            <div className="col-md-5 text-center">
-              <div className="card shadow p-3 mb-5 bg-white rounded">
-                <div className="card-body">
-                  <h5 class="card-title display-5">Sign In</h5>
-                  <form className="form-signin" onSubmit={handleSubmit}>
-                    
-                      <input
-                        type="email"
-                        ref={emailRef}
-                        className="form-control shadow-sm p-2 mb-5 bg-white rounded"
-                        placeholder="Email" />
-                   
-                   
-                      <input
-                        type="password"
-                        ref={passwordRef}
-                        className="form-control shadow-sm p-2 mb-5 bg-white rounded"
-                        placeholder="Password" />
-                    
-                    <button type="submit" className="btn btn-primary btn-block">Sign in</button>
-                  </form>
-                  <br />
-                  <div className="col">
-                    <a>Forgot password?</a>
-                  </div>
-                  <div>
-                    <button className="btn btn-primary" onClick={signInWithGoogle}>Sign In with Google</button>
-                  </div>
-                </div>
+            <form className="login-card-form" onSubmit={handleSubmit}>
+              <div className="form-item">
+                <span className="form-item-icon material-symbols-rounded">
+                  mail
+                </span>
+                <input
+                  type="email"
+                  ref={emailRef}
+                  placeholder="Email"
+                  autoFocus
+                  required
+                />
               </div>
+              <div className="form-item">
+                <span className="form-item-icon material-symbols-rounded">
+                  lock
+                </span>
+                <input
+                  type="password"
+                  ref={passwordRef}
+                  placeholder="Password"
+                  required
+                />
+              </div>
+
+              <button type="submit">Sign In</button>
+            </form>
+            <div className="login-card-footer">
+              Don't have an account? <Link to="/SignUp">Please Sign-Up.</Link>
+            </div>
+          </div>
+          <div className="login-card-social">
+            <div>Other Sign-In Options</div>
+            <div className="login-card-social-btns">
+              <a href="#" onClick={signInWithGoogle}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="icon icon-tabler icon-tabler-brand-google"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                  <path d="M17.788 5.108a9 9 0 1 0 3.212 6.892h-8"></path>
+                </svg>
+              </a>
             </div>
           </div>
         </div>
-
-
-
-
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 };
 

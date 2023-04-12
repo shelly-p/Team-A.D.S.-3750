@@ -1,12 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+.full-screen{
+    width: 100vw;
+    height: 100vh;
+}
 body {
     margin: 0 auto;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
     background: linear-gradient(to right, #33339a, #ff00cc);
     /*background-color: cornflowerblue;*/
-    justify-content: center;
+    justify-content: bottom;
     align-items: center;
 }
 
