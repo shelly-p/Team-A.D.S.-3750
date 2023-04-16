@@ -1,84 +1,45 @@
-import { useState, useEffect } from "react";
-import { db, query, doc, getDoc, onAuthStateChanged, collection, where, getDocs, auth } from "../firebase";
+import { useState, useEffect, useContext } from "react";
+import { db, query, collection, where, getDocs } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
 
 function Profile() {
-  const [email, setEmail] = useState(null);
-  const [username, setUsername] = useState(null);
-  const [authenticatedUser, setAuthenticatedUser] = useState(
-    JSON.parse(localStorage.getItem('authenticatedUser')) || null
-  );
+  const { currentUser, username } = useContext(AuthContext);
   const [pointsTotal, setPointsTotal] = useState(null);
   const [gamesCreated, setGamesCreated] = useState(null);
   const navigate = useNavigate();
 
-  // Authentication
+  // Getting users total points
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-        localStorage.setItem('authenticatedUser', JSON.stringify(user));
-      } else {
-        setAuthenticatedUser(null);
-        localStorage.removeItem('authenticatedUser');
-      }
-    });
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    if (!authenticatedUser) {
-      navigate('/');
-    }
-  }, [authenticatedUser, navigate]);
-
-  // Getting user's email and username
-  useEffect(() => {
-    const fetchEmailAndUsername = async () => {
-      if (authenticatedUser) {
+    const fetchPoints = async () => {
+      if (currentUser) {
         try {
-          const docRef = doc(db, "users", authenticatedUser.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setEmail(docSnap.data().email);
-            setUsername(docSnap.data().username);
-          } else {
-            setEmail(null);
-            setUsername(null);
-          }
+          const leaderboardRef = collection(db, "leaderboard");
+          const q = query(
+            leaderboardRef,
+            where("email", "==", currentUser.email)
+          );
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach((doc) => {
+            setPointsTotal(doc.data().pointsTotal);
+          });
         } catch (error) {
           console.log(error);
         }
       }
     };
-    fetchEmailAndUsername();
-  }, [authenticatedUser]);
-
-  // Getting users total points
-  useEffect(() => {
-    const fetchPoints = async () => {
-        if (authenticatedUser) {
-            try {
-                const leaderboardRef = collection(db, "leaderboard");
-                const q = query(leaderboardRef, where("email", "==", email));
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach((doc) => {
-                    setPointsTotal(doc.data().pointsTotal);
-                });
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    };
     fetchPoints();
-}, [authenticatedUser, username]);
+  }, [currentUser]);
 
   //Getting the amount of times the user has created a game
   useEffect(() => {
     const fetchGamesCreated = async () => {
-      if (authenticatedUser) {
+      if (currentUser) {
         try {
-          const q = query(collection(db, "GameId"), where("createdBy", "==", email))
+          const q = query(
+            collection(db, "GameId"),
+            where("createdBy", "==", currentUser.email)
+          );
           const querySnapshot = await getDocs(q);
           setGamesCreated(querySnapshot.size);
         } catch (error) {
@@ -87,18 +48,33 @@ function Profile() {
       }
     };
     fetchGamesCreated();
-  }, [authenticatedUser, email]);
+  }, [currentUser]);
 
   return (
-    <div>
-      <h2>Profile</h2>
-      <p>Email: {email}</p>
-      <p>Username: {username}</p>
-      <p>Total Points: {pointsTotal}</p>
-      <p>Games Created: {gamesCreated}</p>
-    </div>
+    <>
+      {currentUser ? (
+        <>
+          <div className="text-center text-light p-5">
+            <h2 className="display-4 p-3">Profile</h2>
+            <hr></hr>
+
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title">Profile</h5>
+                <p className="p-2 display-6">Email: {currentUser.email}</p>
+                <p className="p-2 display-6">Username: {username}</p>
+                <p className="p-2 display-6"> Total Points: {pointsTotal}</p>
+                <p className="p-2 display-6">Games Created: {gamesCreated}</p>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>{navigate("/Home")};</>
+      )}
+      ;
+    </>
   );
 }
 
 export default Profile;
-

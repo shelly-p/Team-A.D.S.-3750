@@ -1,34 +1,22 @@
-import { useState, useEffect } from "react";
-import { db, registerUser, collection, getDocs, query, where, onAuthStateChanged, auth } from "../firebase";
+import { useState, useContext } from "react";
+import { db, collection, getDocs, query, where } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
-
+import { AuthContext } from "../contexts/AuthContext";
 
 const Register = () => {
+  const { signup, currenUser } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [emailExists, setEmailExists] = useState(false);
   const [usernameExists, setUsernameExists] = useState(false);
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-      } else {
-        setAuthenticatedUser(null);
-      }
-    });
-    return unsubscribe;
-  }, [auth]);
-
-
 
   const handleEmailChange = async (event) => {
     const emailValue = event.target.value;
     setEmail(emailValue);
 
+    // check if email exists
     const q = query(collection(db, "users"), where("email", "==", emailValue));
     const querySnapshot = await getDocs(q);
     setEmailExists(!querySnapshot.empty);
@@ -38,6 +26,7 @@ const Register = () => {
     const usernameValue = event.target.value;
     setUsername(usernameValue);
 
+    // check if username exists
     const q = query(collection(db, "users"), where("username", "==", usernameValue));
     const querySnapshot = await getDocs(q);
     setUsernameExists(!querySnapshot.empty);
@@ -48,7 +37,7 @@ const Register = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!emailExists && !usernameExists) {
-      registerUser(email, password, username);
+      signup(email,username, password);
       navigate("/Dashboard");
     }
   };
@@ -56,7 +45,7 @@ const Register = () => {
   return (
     <div 
     className="p-5">
-      {authenticatedUser ? (
+      {currenUser ? (
         <>
           <p>User is logged in</p>
           {navigate("/Dashboard")}
@@ -94,11 +83,9 @@ const Register = () => {
               <button type="submit" disabled={emailExists || usernameExists}>Sign Up</button>
             </form>
             <div className="login-card-footer">
-              Have an account? <a href="/Login">Please Login.</a>
+              Have an account? <Link to="/Login">Please Login.</Link>
             </div>
           </div>
-      
-          
         </div>
       )}
     </div>

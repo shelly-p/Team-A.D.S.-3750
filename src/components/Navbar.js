@@ -1,62 +1,31 @@
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { db, doc, getDoc, auth, onAuthStateChanged, signOutUser } from "../firebase";
-
+import { signOutUser } from "../firebase";
+import { AuthContext } from "../contexts/AuthContext";
 
 
 const Navbar = () => {
-  const [username, setUsername] = useState(null);
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const { currentUser, username, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-      } else {
-        setAuthenticatedUser(null);
-      }
-    });
-    return unsubscribe;
-  }, [auth]);
-
-  useEffect(() => {
-    const fetchUsername = async () => {
-      if (authenticatedUser) {
-        try {
-          const docRef = doc(db, "users", authenticatedUser.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setUsername(docSnap.data().username);
-          } else {
-            setUsername(localStorage.getItem("username"));
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    };
-    fetchUsername();
-  }, [authenticatedUser, db]);
-
   const handleSignOut = () => {
-    signOutUser();
+    logout();
     navigate("/");
   };
 
   return (
-    <nav className="navbar navbar-expand-md bg-dark">
+    <nav className="navbar navbar-expand-md navbar-dark bg-dark">
       <div className="container-xxl">
         <a className="navbar-brand">
           <span className="fw-bolder text-light fs-3 text">TriviADS</span>
         </a>
-        <button className="navbar-toggler bg-light" type="button" data-bs-toggle="collapse"
+        <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
           data-bs-target="#main-nav" aria-controls="main-nav" aria-expanded="false"
           aria-label="Toggle navigation">
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {authenticatedUser ? (
+        {currentUser ? (
           <div className="collapse navbar-collapse justify-content-end align-items-center"
             id="main-nav">
             <ul className="navbar-nav fw-bold">

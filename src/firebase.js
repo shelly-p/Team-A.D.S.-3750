@@ -8,7 +8,7 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInAnonymously,
-  signInWithPopup
+  signInWithPopup,
 } from "firebase/auth";
 import {
   collection,
@@ -23,7 +23,7 @@ import {
   onSnapshot,
   updateDoc,
   addDoc,
-  limit
+  limit,
 } from "firebase/firestore";
 
 // Initialize Firebase
@@ -34,27 +34,27 @@ const firebaseConfig = {
   storageBucket: "triviads-31954.appspot.com",
   messagingSenderId: "52314723167",
   appId: "1:52314723167:web:791b8552c70f256b941cea",
-  measurementId: "G-F52PV6LQ24"
+  measurementId: "G-F52PV6LQ24",
 };
 const app = initializeApp(firebaseConfig);
-
 
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 const questionsCollectionRef = collection(db, "questions");
+const playerCollectionRef = collection(db, "players");
 
-const signInWithGoogle = async () => {
+/*const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
-    
-    localStorage.setItem("username", user.displayName);
+    console.log("gmail: ", user);
+    sessionStorage.setItem("username", user.displayName);
   } catch (error) {
     console.error('Error signing in with Google:', error);
   }
-}
+}*/
 
 // function to sign is a user anonymously
 async function guestSignIn(name) {
@@ -64,10 +64,10 @@ async function guestSignIn(name) {
       const userRef = doc(db, "users", uid);
       setDoc(userRef, {
         name,
-        authProvider: "guest"
+        authProvider: "guest",
       })
         .then(() => {
-          localStorage.setItem("username", name);
+          sessionStorage.setItem("username", name);
         })
         .catch((error) => {
           console.error("Error adding user to collection: ", error);
@@ -78,7 +78,7 @@ async function guestSignIn(name) {
     });
 }
 
-// function that handles custom authentication
+/*// function that handles custom authentication
 const authenticateUser = async (email, password) => {
   signInWithEmailAndPassword(auth, email, password)
     .then(async (userCredential) => {
@@ -96,22 +96,20 @@ const authenticateUser = async (email, password) => {
       const errorMessage = error.message;
       console.log(errorCode, ": ", errorMessage);
     });
-};
+};*/
 
 // function that signs the user out
 const signOutUser = async () => {
   try {
     await signOut(auth);
     console.log("User signed out successfully");
-    // Remove user from session storage
-    window.localStorage.clear();
   } catch (error) {
     console.error("Error signing user out:", error);
   }
 };
 
 // function that registers a new user
-const registerUser = async (email, password, username) => {
+/*const registerUser = async (email, password, username) => {
   createUserWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
       const { uid } = userCredential.user;
@@ -122,6 +120,7 @@ const registerUser = async (email, password, username) => {
         authProvider: "custom"
       })
         .then(() => {
+          sessionStorage.setItem("username", username);
           localStorage.setItem("username", username);
           const userRef = doc(db, "leaderboard", uid);
           setDoc(userRef, {
@@ -137,19 +136,18 @@ const registerUser = async (email, password, username) => {
     .catch((error) => {
       console.error("Error registering user: ", error);
     });
-};
+};*/
 
 // Create a function that adds a new game to the 'GameId' collection
 const addGame = async (category, numOfQuestions) => {
   const access = Math.floor(1000 + Math.random() * 9000); // Generate a random 4-digit number for access code
   const userEmail = auth.currentUser.email; // Get the email of the user currently logged in
   try {
-    await setDoc(doc(db, "GameId", JSON.stringify(access)), {
+    await setDoc(doc(db, "GameId", access), {
       access,
       category,
       createdBy: userEmail,
       numOfQuestions,
-      isStarted: false,
     });
     console.log("Document written with ID: ", access);
     return access;
@@ -158,29 +156,31 @@ const addGame = async (category, numOfQuestions) => {
   }
 };
 
-
 export {
   auth,
   createUserWithEmailAndPassword,
-  authenticateUser,
+  signInWithEmailAndPassword,
+  //authenticateUser,
   collection,
   signOutUser,
-  registerUser,
+  //registerUser,
   onAuthStateChanged,
   db,
   doc,
   getDocs,
   getDoc,
   questionsCollectionRef,
+  playerCollectionRef,
   query,
   orderBy,
   where,
-  signInWithGoogle,
+  signInWithPopup,
   guestSignIn,
   onSnapshot,
   updateDoc,
   setDoc,
   addDoc,
+  provider,
   limit,
-  addGame // Add this line to export the addGame function
+  addGame, // Add this line to export the addGame function
 };

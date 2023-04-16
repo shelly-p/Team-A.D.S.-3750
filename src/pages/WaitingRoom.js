@@ -1,45 +1,27 @@
-import { useState, useEffect } from "react";
-import { auth, db, doc, getDoc, onAuthStateChanged, collection, onSnapshot, query, where, updateDoc, orderBy } from "../firebase";
+import { useState, useEffect, useContext, useRef } from "react";
+import { db, doc, getDoc, collection, onSnapshot, query, where, updateDoc, orderBy } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
+import { GameContext } from "../contexts/GameContext";
 
 const WaitingRoom = () => {
-    const [email, setEmail] = useState(null);
-    const [authenticatedUser, setAuthenticatedUser] = useState(null);
-    const [players, setPlayers] = useState([]);
+    const { currentUser } = useContext(AuthContext);
+    const { gameInfo, getPlayers, players, getPlayerDocID } = useContext(GameContext);
+
+    const accessCode = JSON.stringify(gameInfo.access);
+    console.log("game info: ", gameInfo);
+    console.log("access code: ", accessCode);
+    
+    //const [players, setPlayers] = useState([]);
     const [role, setRole] = useState("player");
-    const [currentGameInfo, setCurrentGameInfo] = useState(JSON.parse(localStorage.getItem("gameInfo")));
     const [isGameStarted, setIsGameStarted] = useState(false);
     const navigate = useNavigate();
-    const gameRef = doc(db, "GameId", JSON.stringify(currentGameInfo.access));
-    console.log(gameRef);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setAuthenticatedUser(user);
-
-            } else {
-                setAuthenticatedUser(null);
-                setCurrentGameInfo(null);
-            }
-        });
-        return unsubscribe;
-    }, []);
-
-    useEffect(() => {
-        const fetchEmail = async () => {
-            if (authenticatedUser) {
+        const fetchGameStarted = async () => {
+            if (currentUser) {
                 try {
-                    const docRef = doc(db, "users", authenticatedUser.uid);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        setEmail(docSnap.data().email);
-                        console.log(email);
-                    } else {
-                        setEmail(null);
-                    }
-
-                    const gameRef = doc(db, "GameId", JSON.stringify(currentGameInfo.access));
+                    const gameRef = doc(db, "GameId", accessCode);
                     const gameSnap = await getDoc(gameRef);
 
                     if (gameSnap.exists()) {
@@ -47,38 +29,40 @@ const WaitingRoom = () => {
                     } else {
                         console.log("No such document!");
                     }
-
                 } catch (error) {
                     console.log(error);
                 }
             }
         };
-        fetchEmail();
-    }, [authenticatedUser, db, currentGameInfo]);
+        fetchGameStarted();
+    }, [currentUser, db]);
 
     useEffect(() => {
-        if (currentGameInfo) {
-            const q = query(collection(db, "players"), where("gameID", "==", currentGameInfo.access));
+        if (gameInfo) {
+            const q = query(collection(db, "players"), where("gameID", "==", gameInfo.access));
             const unsubscribe = onSnapshot(q, (snapshot) => {
                 const updatedPlayers = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
-                setPlayers(updatedPlayers);
-                console.log(players.uid);
+                getPlayers(updatedPlayers);
+                console.log(players.id);
+                
 
-                const isCreatedByCurrentUser = authenticatedUser && email === currentGameInfo.createdBy;
+                const isCreatedByCurrentUser = currentUser.email === gameInfo.createdBy;
                 if (isCreatedByCurrentUser) {
                     setRole("host");
                 }
-                //localStorage.setItem("docId", players)
+                console.log("createdBy: ", gameInfo.createdBy);
+                console.log("role: ", role);
+                //sessionStorage.setItem("docId", players)
             });
             return unsubscribe;
         }
-    }, [authenticatedUser, email, db, currentGameInfo]);
+    }, [currentUser, db, gameInfo]);
 
     useEffect(() => {
-        const unsubscribe = onSnapshot(gameRef, (doc) => {
+        const unsubscribe = onSnapshot(doc(db, "GameId", accessCode), (doc) => {
             if (doc.exists()) {
                 setIsGameStarted(doc.data().isStarted);
             } else {
@@ -86,10 +70,10 @@ const WaitingRoom = () => {
             }
         });
         return unsubscribe;
-    }, [gameRef]);
+    }, [db]);
 
     const startGame = async () => {
-        await updateDoc(gameRef, {
+        await updateDoc(doc(db, "GameId", accessCode), {
             isStarted: true
         })
             .then(() => {
@@ -98,31 +82,32 @@ const WaitingRoom = () => {
     };
 
     return (
-        <div className="container-lg">
+        <div className="container-lg text-white">
             <div className='row justify-content-center'>
                 <div className="col-md-5 text-center">
-                    {authenticatedUser ? (
+                    {currentUser ? (
                         <>
                             <p>Welcome to the waiting room</p>
-                            {role === "host" ? (
+                            {(role === "host") && (!isGameStarted) ? (
                                 <button onClick={() => startGame()}>Start game</button>
                             ) : (
                                 <>
+                                {}
                                     <p>Waiting for host to start game.</p>
                                     {isGameStarted && navigate("/Game")}
                                 </>
                             )}
                             
-                                <table class="table">
+                                <table className="table">
                                     <thead>
-                                        <tr class="table-light">
+                                        <tr className="table-light">
                                             <th scope="col">Name</th>
                                             <th scope="col">Role</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {players.map((player) => (
-                                            <tr  class="table-light" key={player.id}>
+                                            <tr  className="table-light" key={player.id}>
                                                 <td>{player.name}</td>
                                                 <td>{player.role}</td>
                                             </tr>

@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, collection, db, doc, getDocs, where, questionsCollectionRef, query, updateDoc, onAuthStateChanged, onSnapshot } from "../firebase";
-
+import { AuthContext } from "../contexts/AuthContext";
+import { GameContext } from "../contexts/GameContext";
+import { limit } from "firebase/firestore";
 
 function Timer({ onTimerEnd }) {
   const [seconds, setSeconds] = useState(10);
@@ -31,39 +33,29 @@ function Timer({ onTimerEnd }) {
 
 
 const Game = () => {
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const { currentUser } = useContext(AuthContext);
+  const { gameInfo, playerDocID } = useContext(GameContext);
+
   const [questionData, setQuestionData] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState({});
+  const [currentDifficulty, setCurrentDifficulty] = useState();
   const [answerOptions, setAnswerOptions] = useState([]);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [isCorrect, setIsCorrect] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
-  const [currentGameInfo, setCurrentGameInfo] = useState(JSON.parse(localStorage.getItem("gameInfo")));
+  //const [currentGameInfo, setCurrentGameInfo] = useState(JSON.parse(sessionStorage.getItem("gameInfo")));
   const [players, setPlayers] = useState([]);
+  const [poll, setPoll] = useState([]);
 
-
+  //console.log("players: ", players);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-
-      } else {
-        setAuthenticatedUser(null);
-        setCurrentGameInfo(null);
-      }
-    });
-    return unsubscribe;
-  }, []);
-
-
-  useEffect(() => {
     const getQuestions = async () => {
-      const questionCol = query(questionsCollectionRef, where("category", "==", "geography"));
+      const questionCol = query(questionsCollectionRef, where("category", "==", gameInfo.category), limit(gameInfo.numOfQuestions));
       const snapshot = await getDocs(questionCol);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -79,19 +71,30 @@ const Game = () => {
   }, []);
 
   useEffect(() => {
-    if (currentGameInfo) {
-      const q = query(collection(db, "players"), where("gameID", "==", currentGameInfo.access));
+    if (gameInfo) {
+      const q = query(collection(db, "players"), where("gameID", "==", gameInfo.access));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const updatedPlayers = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setPlayers(updatedPlayers);
-
+        //console.log(players);
       });
       return unsubscribe;
     }
-  }, [db, currentGameInfo]);
+  }, [db, gameInfo]);
+
+  useEffect(() => {
+    if (gameInfo) {
+      const unsub = onSnapshot(doc(db, "polls", JSON.stringify(gameInfo.access)), (doc) => {
+        console.log("Current data: ", doc.data());
+        setPoll(doc.data());
+      });
+
+      return unsub;
+    }
+  }, [db, gameInfo]);
 
   useEffect(() => {
     if (currentQuestion.id) {
@@ -115,6 +118,7 @@ const Game = () => {
         options.push(randomQ.answer);
       }
     }
+
     shuffleArray(options);
     return options;
   };
@@ -134,15 +138,17 @@ const Game = () => {
 
   const handleAnswer = (event) => {
     const userAnswer = event.target.value;
-    const isAnswerCorrect = userAnswer === currentQuestion.answer.toString();
+
+    const isAnswerCorrect = (userAnswer === currentQuestion.answer.toString());
     setSelectedAnswer(userAnswer);
     setIsCorrect(isAnswerCorrect);
     const points = calculatePoints(currentQuestion.difficulty);
-    if (isAnswerCorrect) {
+
+    if (currentQuestion.id && isAnswerCorrect) {
       setTotalPoints(totalPoints + points);
       addPointsToCollection(totalPoints + points);
     }
-
+    answerPoll();
   };
 
   const handleSubmit = (event) => {
@@ -151,11 +157,15 @@ const Game = () => {
   }
 
   const shuffleArray = (array) => {
+    //Fisher-Yates Shuffle
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      const temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+
     }
-  };
+  }
 
   const calculatePoints = (difficulty) => {
     switch (difficulty) {
@@ -175,26 +185,68 @@ const Game = () => {
   };
 
   const addPointsToCollection = async (totalPoints) => {
-    const docId = localStorage.getItem("docId");
-    console.log("docId: ", docId);
-    const playerRef = doc(db, "players", docId);
+
+    console.log("docId: ", playerDocID);
+    const playerRef = doc(db, "players", playerDocID);
     await updateDoc(playerRef, {
       points: totalPoints
     });
   }
 
+  /*// show player and their current points
+  const playerDisplay = async () => {
+    const q = query(collection(db, "players"), where("gameID", "==", gameInfo.access));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const players = [];
+      const points = [];
+      querySnapshot.forEach((doc) => {
+        players.push(doc.data().name);
+        points.push(doc.data().points);
+      });
+      console.log("Current players: ", players.join(", "));
+    });
+
+
+  }*/
+
   // show the answer poll 
+  const answerPoll = () => {
+
+    return (
+      <>
+        <div class="modal" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <p>Modal body text goes here.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
 
   return (
-    <div class="container text-center">
-      <div class="row">
-        
-        <div class="col-6">
+    <div className="container text-center text-white">
+      <div className="row">
+
+        <div className="col-6 col-md-8">
           <div className="">
             <div className='row justify-content-center'>
               <div className=" text-center">
-                {authenticatedUser ? (
+                {currentUser ? (
                   <>
                     <h1>Trivia Game</h1>
                     {!isGameOver && <Timer onTimerEnd={handleNextQuestion} />}
@@ -210,6 +262,12 @@ const Game = () => {
                       </div>
                     </div>
                     <form onSubmit={handleSubmit}>
+                      <button
+                        className="btn btn-outline-primary btn-block"
+                        type="button"
+                        value={answerOptions[0]}
+                        onClick={handleAnswer}
+                        disabled={selectedAnswer !== ''}></button>
                       {answerOptions.map((option) => (
                         <div className="d-grid gap-3" key={option}>
                           <div className="p-2">
@@ -248,24 +306,26 @@ const Game = () => {
             </div>
           </div>
         </div>
-        <div class="col">
+        <div className="col col-md-4">
           <h3>Players</h3>
-          <table class="table">
-            <thead>
-              <tr class="table-light">
-                <th scope="col">Name</th>
-                <th scope="col">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((player) => (
-                <tr class="table-light" key={player.id}>
-                  <td>{player.name}</td>
-                  <td>{player.points}</td>
+          <div className="table-responsive-sm">
+            <table className="table">
+              <thead>
+                <tr className="table-light">
+                  <th scope="col">Name</th>
+                  <th scope="col">Points</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {players.map((player) => (
+                  <tr className="table-light" key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

@@ -1,39 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  auth,
-  authenticateUser,
-  onAuthStateChanged,
-  signInWithGoogle,
-} from "../firebase";
+import { AuthContext } from "../contexts/AuthContext";
 
 const Login = () => {
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const { login, currentUser, signInWithGoogle } = useContext(AuthContext);
 
   const emailRef = useRef();
   const passwordRef = useRef();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticatedUser(user);
-      } else {
-        setAuthenticatedUser(null);
-      }
-    });
-    return unsubscribe;
-  }, [auth]);
-
   const handleSubmit = (event) => {
     event.preventDefault();
-    authenticateUser(emailRef.current.value, passwordRef.current.value);
-
+    login(emailRef.current.value, passwordRef.current.value);
   };
 
   return (
     <div className="p-5">
-      {authenticatedUser ? (
+      {currentUser ? (
         <>
           <p>User is logged in</p>
           {navigate("/Dashboard")}
@@ -85,7 +68,7 @@ const Login = () => {
           <div className="login-card-social">
             <div>Other Sign-In Options</div>
             <div className="login-card-social-btns">
-              <a onClick={signInWithGoogle}>
+              <a onClick={() => signInWithGoogle()}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="icon icon-tabler icon-tabler-brand-google"
