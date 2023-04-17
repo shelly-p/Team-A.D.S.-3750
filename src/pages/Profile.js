@@ -17,20 +17,14 @@ function Profile() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthenticatedUser(user);
-        localStorage.setItem('authenticatedUser', JSON.stringify(user));
+        
       } else {
         setAuthenticatedUser(null);
-        localStorage.removeItem('authenticatedUser');
+        
       }
     });
     return unsubscribe;
   }, []);
-
-  useEffect(() => {
-    if (!authenticatedUser) {
-      navigate('/');
-    }
-  }, [authenticatedUser, navigate]);
 
   // Getting user's email and username
   useEffect(() => {
@@ -60,7 +54,7 @@ function Profile() {
         if (authenticatedUser) {
             try {
                 const leaderboardRef = collection(db, "leaderboard");
-                const q = query(leaderboardRef, where("email", "==", email));
+                const q = query(leaderboardRef, where("email", "==", authenticatedUser.email));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach((doc) => {
                     setPointsTotal(doc.data().pointsTotal);
@@ -71,7 +65,7 @@ function Profile() {
         }
     };
     fetchPoints();
-}, [authenticatedUser, username]);
+}, [authenticatedUser]);
 
   //Getting the amount of times the user has created a game
   useEffect(() => {
@@ -90,13 +84,29 @@ function Profile() {
   }, [authenticatedUser, email]);
 
   return (
-    <div>
-      <h2>Profile</h2>
-      <p>Email: {email}</p>
-      <p>Username: {username}</p>
-      <p>Total Points: {pointsTotal}</p>
-      <p>Games Created: {gamesCreated}</p>
-    </div>
+    <>
+    {authenticatedUser ? (
+      <>
+        <div className="text-center text-light p-5">
+          <h2 className="display-4 p-3">Profile</h2>
+          <hr></hr>
+
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Profile</h5>
+              <p className="p-2 display-6">Email: {email}</p>
+              <p className="p-2 display-6">Username: {username}</p>
+              <p className="p-2 display-6"> Total Points: {pointsTotal}</p>
+              <p className="p-2 display-6">Games Created: {gamesCreated}</p>
+            </div>
+          </div>
+        </div>
+      </>
+    ) : (
+      <>{navigate("/Home")};</>
+    )}
+    ;
+  </>
   );
 }
 

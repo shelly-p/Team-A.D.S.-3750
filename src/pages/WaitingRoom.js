@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { auth, db, doc, getDoc, onAuthStateChanged, collection, onSnapshot, query, where, updateDoc, orderBy } from "../firebase";
+import { auth, db, doc, getDoc, onAuthStateChanged, collection, onSnapshot, query, where, updateDoc } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
 const WaitingRoom = () => {
@@ -10,8 +10,7 @@ const WaitingRoom = () => {
     const [currentGameInfo, setCurrentGameInfo] = useState(JSON.parse(localStorage.getItem("gameInfo")));
     const [isGameStarted, setIsGameStarted] = useState(false);
     const navigate = useNavigate();
-    const gameRef = doc(db, "GameId", JSON.stringify(currentGameInfo.access));
-    console.log(gameRef);
+   
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -78,7 +77,7 @@ const WaitingRoom = () => {
     }, [authenticatedUser, email, db, currentGameInfo]);
 
     useEffect(() => {
-        const unsubscribe = onSnapshot(gameRef, (doc) => {
+        const unsubscribe = onSnapshot(doc(db, "GameId", JSON.stringify(currentGameInfo.access)), (doc) => {
             if (doc.exists()) {
                 setIsGameStarted(doc.data().isStarted);
             } else {
@@ -86,16 +85,20 @@ const WaitingRoom = () => {
             }
         });
         return unsubscribe;
-    }, [gameRef]);
+    }, [currentGameInfo]);
 
-    const startGame = async () => {
-        await updateDoc(gameRef, {
-            isStarted: true
-        })
-            .then(() => {
-                navigate("/Game");
-            })
-    };
+    const startGame = () => {
+        setTimeout(() => {
+          try {
+            updateDoc(doc(db, "GameId", JSON.stringify(currentGameInfo.access)), {
+              isStarted: true
+            });
+            navigate("/Game");
+          } catch (error) {
+            console.error("Error updating document: ", error);
+          }
+        }, 5000); // 5000 milliseconds = 5 seconds
+      };
 
     return (
         <div className="container-lg">
@@ -104,7 +107,7 @@ const WaitingRoom = () => {
                     {authenticatedUser ? (
                         <>
                             <p>Welcome to the waiting room</p>
-                            {role === "host" ? (
+                            {(role === "host") && (currentGameInfo) ? (
                                 <button onClick={() => startGame()}>Start game</button>
                             ) : (
                                 <>

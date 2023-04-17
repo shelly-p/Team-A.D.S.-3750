@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, collection, db, doc, getDocs, where, questionsCollectionRef, query, updateDoc, onAuthStateChanged, onSnapshot } from "../firebase";
+import { auth, collection, db, doc, getDocs, where, questionsCollectionRef, query, updateDoc, onAuthStateChanged, onSnapshot, limit } from "../firebase";
 
 
 function Timer({ onTimerEnd }) {
@@ -63,7 +63,7 @@ const Game = () => {
 
   useEffect(() => {
     const getQuestions = async () => {
-      const questionCol = query(questionsCollectionRef, where("category", "==", "geography"));
+      const questionCol = query(questionsCollectionRef, where("category", "==", currentGameInfo.category), limit(currentGameInfo.numOfQuestions));
       const snapshot = await getDocs(questionCol);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -76,7 +76,7 @@ const Game = () => {
     };
 
     getQuestions();
-  }, []);
+  }, [currentGameInfo.category, currentGameInfo.numOfQuestions]);
 
   useEffect(() => {
     if (currentGameInfo) {
@@ -91,7 +91,7 @@ const Game = () => {
       });
       return unsubscribe;
     }
-  }, [db, currentGameInfo]);
+  }, [currentGameInfo]);
 
   useEffect(() => {
     if (currentQuestion.id) {
@@ -141,6 +141,7 @@ const Game = () => {
     if (isAnswerCorrect) {
       setTotalPoints(totalPoints + points);
       addPointsToCollection(totalPoints + points);
+      //addPointsToLeaderboard(totalPoints + points)
     }
 
   };
@@ -183,17 +184,29 @@ const Game = () => {
     });
   }
 
+ /* const addPointsToLeaderboard = async (totalPoints) => {
+    const username = localStorage.getItem("username");
+    try {
+      const leaderboardRef = doc(collection(db, "leaderboard"), username);
+      await updateDoc(leaderboardRef, {
+        pointsTotal: totalPoints,
+      });
+    } catch (error) {
+      console.error("Error updating leaderboard: ", error);
+    }
+  };*/
+
   // show the answer poll 
 
 
   return (
-    <div class="container text-center">
-      <div class="row">
+    <div className="container text-center">
+      <div className="row">
         
-        <div class="col-6">
+        <div className="col-6">
           <div className="">
             <div className='row justify-content-center'>
-              <div className=" text-center">
+              <div className="text-white text-center">
                 {authenticatedUser ? (
                   <>
                     <h1>Trivia Game</h1>
@@ -228,15 +241,15 @@ const Game = () => {
                         </div>
                       ))}
                     </form>
-                    <button
+                    {/*<button
                       className="btn btn-dark"
                       onClick={handleNextQuestion}
                     >
                       Next Question
-                    </button>
+                      </button>*/}
                     {isCorrect && <p>Correct!</p>}
                     {!isCorrect && selectedAnswer !== '' && <p>Incorrect!</p>}
-                    {isGameOver && <p>Game Over!</p>}
+                    {isGameOver && <><p>Game Over!</p></>}
                   </>
                 ) : (
                   <>
@@ -248,18 +261,18 @@ const Game = () => {
             </div>
           </div>
         </div>
-        <div class="col">
-          <h3>Players</h3>
-          <table class="table">
+        <div className="col">
+          <h3 className="text-white">Players</h3>
+          <table className="table">
             <thead>
-              <tr class="table-light">
+              <tr className="table-light">
                 <th scope="col">Name</th>
                 <th scope="col">Points</th>
               </tr>
             </thead>
             <tbody>
               {players.map((player) => (
-                <tr class="table-light" key={player.id}>
+                <tr className="table-light" key={player.id}>
                   <td>{player.name}</td>
                   <td>{player.points}</td>
                 </tr>
