@@ -28,7 +28,6 @@ const Login = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     authenticateUser(emailRef.current.value, passwordRef.current.value);
-
   };
 
   return (
@@ -79,7 +78,7 @@ const Login = () => {
               <button type="submit">Sign In</button>
             </form>
             <div className="login-card-footer">
-              Don't have an account? <Link to="/SignUp">Please Sign-Up.</Link>
+              Don't have an account? <Link to="/Register">Please Sign-Up.</Link>
             </div>
           </div>
           <div className="login-card-social">

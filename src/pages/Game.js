@@ -1,7 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, collection, db, doc, getDocs, where, questionsCollectionRef, query, updateDoc, onAuthStateChanged, onSnapshot } from "../firebase";
-
+import {
+  auth,
+  collection,
+  db,
+  doc,
+  getDocs,
+  where,
+  questionsCollectionRef,
+  query,
+  updateDoc,
+  onAuthStateChanged,
+  onSnapshot,
+} from "../firebase";
 
 function Timer({ onTimerEnd }) {
   const [seconds, setSeconds] = useState(10);
@@ -23,12 +34,10 @@ function Timer({ onTimerEnd }) {
 
   return (
     <div>
-      <p>Timer: {seconds}</p>
+      <p className="text-light">Timer: {seconds}</p>
     </div>
   );
 }
-
-
 
 const Game = () => {
   const [authenticatedUser, setAuthenticatedUser] = useState(null);
@@ -36,14 +45,14 @@ const Game = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState({});
   const [answerOptions, setAnswerOptions] = useState([]);
-  const [selectedAnswer, setSelectedAnswer] = useState('');
+  const [selectedAnswer, setSelectedAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
-  const [currentGameInfo, setCurrentGameInfo] = useState(JSON.parse(sessionStorage.getItem("gameInfo")));
+  const [currentGameInfo, setCurrentGameInfo] = useState(
+    JSON.parse(localStorage.getItem("gameInfo"))
+  );
   const [players, setPlayers] = useState([]);
-
-
 
   const navigate = useNavigate();
 
@@ -51,7 +60,6 @@ const Game = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthenticatedUser(user);
-
       } else {
         setAuthenticatedUser(null);
         setCurrentGameInfo(null);
@@ -60,10 +68,12 @@ const Game = () => {
     return unsubscribe;
   }, []);
 
-
   useEffect(() => {
     const getQuestions = async () => {
-      const questionCol = query(questionsCollectionRef, where("category", "==", "geography"));
+      const questionCol = query(
+        questionsCollectionRef,
+        where("category", "==", "geography")
+      );
       const snapshot = await getDocs(questionCol);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -80,14 +90,16 @@ const Game = () => {
 
   useEffect(() => {
     if (currentGameInfo) {
-      const q = query(collection(db, "players"), where("gameID", "==", currentGameInfo.access));
+      const q = query(
+        collection(db, "players"),
+        where("gameID", "==", currentGameInfo.access)
+      );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const updatedPlayers = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setPlayers(updatedPlayers);
-
       });
       return unsubscribe;
     }
@@ -96,9 +108,8 @@ const Game = () => {
   useEffect(() => {
     if (currentQuestion.id) {
       setAnswerOptions(randomAnswerOptions(currentQuestion, questionData));
-      setSelectedAnswer('');
+      setSelectedAnswer("");
       setIsCorrect(false);
-
     }
   }, [currentQuestion]);
 
@@ -111,7 +122,10 @@ const Game = () => {
     const options = [question.answer];
     while (options.length < 4) {
       const randomQ = randomQuestion(questions);
-      if (randomQ.answer !== question.answer && !options.includes(randomQ.answer)) {
+      if (
+        randomQ.answer !== question.answer &&
+        !options.includes(randomQ.answer)
+      ) {
         options.push(randomQ.answer);
       }
     }
@@ -120,7 +134,6 @@ const Game = () => {
   };
 
   const handleNextQuestion = () => {
-
     if (currentQuestionIndex === questionData.length - 1) {
       setCurrentQuestion({});
       setIsGameOver(true);
@@ -128,7 +141,7 @@ const Game = () => {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setCurrentQuestion(questionData[currentQuestionIndex + 1]);
       setIsCorrect(false);
-      setSelectedAnswer('');
+      setSelectedAnswer("");
     }
   };
 
@@ -142,13 +155,12 @@ const Game = () => {
       setTotalPoints(totalPoints + points);
       addPointsToCollection(totalPoints + points);
     }
-
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
     setIsCorrect(selectedAnswer === currentQuestion.answer.toString());
-  }
+  };
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -175,32 +187,31 @@ const Game = () => {
   };
 
   const addPointsToCollection = async (totalPoints) => {
-    const docId = sessionStorage.getItem("docId");
+    const docId = localStorage.getItem("docId");
     console.log("docId: ", docId);
     const playerRef = doc(db, "players", docId);
     await updateDoc(playerRef, {
-      points: totalPoints
+      points: totalPoints,
     });
-  }
+  };
 
-  // show the answer poll 
-
+  // show the answer poll
 
   return (
     <div class="container text-center">
       <div class="row">
-        
         <div class="col-6">
           <div className="">
-            <div className='row justify-content-center'>
+            <div className="row justify-content-center">
               <div className=" text-center">
                 {authenticatedUser ? (
                   <>
-                    <h1>Trivia Game</h1>
+                    <h1 className="text-light">Trivia Game</h1>
                     {!isGameOver && <Timer onTimerEnd={handleNextQuestion} />}
                     <div className="login-card-container">
-                      <div className="card-header">
-                        Question {currentQuestionIndex + 1} of {questionData.length}
+                      <div className="card-header text-light">
+                        Question {currentQuestionIndex + 1} of{" "}
+                        {questionData.length}
                       </div>
 
                       <div className="login-card w-100 h-100">
@@ -219,7 +230,7 @@ const Game = () => {
                                 type="button"
                                 value={option}
                                 onClick={handleAnswer}
-                                disabled={selectedAnswer !== ''}
+                                disabled={selectedAnswer !== ""}
                               >
                                 {option}
                               </button>
@@ -235,13 +246,20 @@ const Game = () => {
                       Next Question
                     </button>
                     {isCorrect && <p>Correct!</p>}
-                    {!isCorrect && selectedAnswer !== '' && <p>Incorrect!</p>}
+                    {!isCorrect && selectedAnswer !== "" && <p>Incorrect!</p>}
                     {isGameOver && <p>Game Over!</p>}
                   </>
                 ) : (
                   <>
-                    <p className="display-5 text-center">Must be logged in to play.</p>
-                    <button className="btn btn-secondary btn-lg" onClick={() => navigate("/Login")}>Go to Login</button>
+                    <p className="display-5 text-center">
+                      Must be logged in to play.
+                    </p>
+                    <button
+                      className="btn btn-secondary btn-lg"
+                      onClick={() => navigate("/Login")}
+                    >
+                      Go to Login
+                    </button>
                   </>
                 )}
               </div>
@@ -249,7 +267,7 @@ const Game = () => {
           </div>
         </div>
         <div class="col">
-          <h3>Players</h3>
+          <h3 className="text-light">Players</h3>
           <table class="table">
             <thead>
               <tr class="table-light">
@@ -269,8 +287,6 @@ const Game = () => {
         </div>
       </div>
     </div>
-
-
   );
 };
 

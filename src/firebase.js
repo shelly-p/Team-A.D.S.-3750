@@ -22,7 +22,8 @@ import {
   setDoc,
   onSnapshot,
   updateDoc,
-  addDoc
+  addDoc,
+  limit
 } from "firebase/firestore";
 
 // Initialize Firebase
@@ -49,7 +50,7 @@ const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     
-    sessionStorage.setItem("username", user.displayName);
+    localStorage.setItem("username", user.displayName);
   } catch (error) {
     console.error('Error signing in with Google:', error);
   }
@@ -66,7 +67,7 @@ async function guestSignIn(name) {
         authProvider: "guest"
       })
         .then(() => {
-          sessionStorage.setItem("username", name);
+          localStorage.setItem("username", name);
         })
         .catch((error) => {
           console.error("Error adding user to collection: ", error);
@@ -86,7 +87,6 @@ const authenticateUser = async (email, password) => {
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         const username = docSnap.data().username;
-        sessionStorage.setItem("username", username);
         localStorage.setItem("username", username);
       }
       console.log("User signed in.");
@@ -104,8 +104,7 @@ const signOutUser = async () => {
     await signOut(auth);
     console.log("User signed out successfully");
     // Remove user from session storage
-    window.sessionStorage.clear();
-    localStorage.clear();
+    window.localStorage.clear();
   } catch (error) {
     console.error("Error signing user out:", error);
   }
@@ -123,7 +122,6 @@ const registerUser = async (email, password, username) => {
         authProvider: "custom"
       })
         .then(() => {
-          sessionStorage.setItem("username", username);
           localStorage.setItem("username", username);
           const userRef = doc(db, "leaderboard", uid);
           setDoc(userRef, {
@@ -146,12 +144,12 @@ const addGame = async (category, numOfQuestions) => {
   const access = Math.floor(1000 + Math.random() * 9000); // Generate a random 4-digit number for access code
   const userEmail = auth.currentUser.email; // Get the email of the user currently logged in
   try {
-    await setDoc(doc(db, "GameId", access.toString()), {
-      access: access,
+    await setDoc(doc(db, "GameId", JSON.stringify(access)), {
+      access,
       category,
       createdBy: userEmail,
-      numOfQuestions
-      
+      numOfQuestions,
+      isStarted: false,
     });
     console.log("Document written with ID: ", access);
     return access;
@@ -159,6 +157,7 @@ const addGame = async (category, numOfQuestions) => {
     console.error("Error adding document: ", error);
   }
 };
+
 
 export {
   auth,
@@ -182,5 +181,6 @@ export {
   updateDoc,
   setDoc,
   addDoc,
+  limit,
   addGame // Add this line to export the addGame function
 };

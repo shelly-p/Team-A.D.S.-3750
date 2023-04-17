@@ -29,7 +29,7 @@ const Navbar = () => {
           if (docSnap.exists()) {
             setUsername(docSnap.data().username);
           } else {
-            setUsername(sessionStorage.getItem("username"));
+            setUsername(localStorage.getItem("username"));
           }
         } catch (error) {
           console.log(error);

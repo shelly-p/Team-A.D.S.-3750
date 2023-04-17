@@ -6,7 +6,7 @@ function Profile() {
   const [email, setEmail] = useState(null);
   const [username, setUsername] = useState(null);
   const [authenticatedUser, setAuthenticatedUser] = useState(
-    JSON.parse(sessionStorage.getItem('authenticatedUser')) || null
+    JSON.parse(localStorage.getItem('authenticatedUser')) || null
   );
   const [pointsTotal, setPointsTotal] = useState(null);
   const [gamesCreated, setGamesCreated] = useState(null);
@@ -17,20 +17,14 @@ function Profile() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthenticatedUser(user);
-        sessionStorage.setItem('authenticatedUser', JSON.stringify(user));
+        localStorage.setItem('authenticatedUser', JSON.stringify(user));
       } else {
         setAuthenticatedUser(null);
-        sessionStorage.removeItem('authenticatedUser');
+        localStorage.removeItem('authenticatedUser');
       }
     });
     return unsubscribe;
   }, []);
-
-  useEffect(() => {
-    if (!authenticatedUser) {
-      navigate('/');
-    }
-  }, [authenticatedUser, navigate]);
 
   // Getting user's email and username
   useEffect(() => {
@@ -90,13 +84,29 @@ function Profile() {
   }, [authenticatedUser, email]);
 
   return (
-    <div>
-      <h2>Profile</h2>
-      <p>Email: {email}</p>
-      <p>Username: {username}</p>
-      <p>Total Points: {pointsTotal}</p>
-      <p>Games Created: {gamesCreated}</p>
-    </div>
+    <>
+    {authenticatedUser ? (
+      <>
+        <div className="text-center text-light p-5">
+          <h2 className="display-4 p-3">Profile</h2>
+          <hr></hr>
+
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Profile</h5>
+              <p className="p-2 display-6">Email: {email}</p>
+              <p className="p-2 display-6">Username: {username}</p>
+              <p className="p-2 display-6"> Total Points: {pointsTotal}</p>
+              <p className="p-2 display-6">Games Created: {gamesCreated}</p>
+            </div>
+          </div>
+        </div>
+      </>
+    ) : (
+      <>{navigate("/Home")};</>
+    )}
+    ;
+  </>
   );
 }
 

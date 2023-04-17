@@ -4,7 +4,6 @@ import Home from './pages/Home';
 import About from "./pages/About";
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Reset from './pages/Reset';
 import Register from './pages/Register';
 import Navbar from './components/Navbar';
 import Game from './pages/Game';
@@ -24,7 +23,6 @@ function App() {
           <Route exact path="/About" element={<About />} />
           <Route exact path="/Login" element={<Login />} />
           <Route exact path="/Register" element={<Register />} />
-          <Route exact path="/Reset" element={<Reset />} />
           <Route exact path="/Dashboard" element={<Dashboard />} />
           <Route exact path="/Game" element={<Game />} />
           <Route exact path="/WaitingRoom" element={<WaitingRoom />} />
